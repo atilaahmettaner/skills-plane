@@ -47,13 +47,6 @@ export function SkillsGrid({ skills }: SkillsGridProps) {
                         }
                     }}
                 />
-
-                <Group gap="sm">
-                    <Badge size="lg" radius="md" color="cyan" variant="filled" style={{ height: '36px', cursor: 'default' }}>All Categories</Badge>
-                    <Badge size="lg" radius="md" variant="outline" color="gray" style={{ height: '36px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.02)', color: 'rgba(255, 255, 255, 0.7)', cursor: 'default' }}>Web Browsing</Badge>
-                    <Badge size="lg" radius="md" variant="outline" color="gray" style={{ height: '36px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.02)', color: 'rgba(255, 255, 255, 0.7)', cursor: 'default' }}>Finance</Badge>
-                    <Badge size="lg" radius="md" variant="outline" color="gray" style={{ height: '36px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.02)', color: 'rgba(255, 255, 255, 0.7)', cursor: 'default' }}>Coding</Badge>
-                </Group>
             </Stack>
 
             {/* Featured Content & Grid */}
