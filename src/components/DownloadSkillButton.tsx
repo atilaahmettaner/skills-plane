@@ -8,7 +8,7 @@ import { useState } from "react";
 
 interface DownloadSkillButtonProps {
     slug: string;
-    content: string;
+    content: string | any;
 }
 
 export function DownloadSkillButton({ slug, content }: DownloadSkillButtonProps) {

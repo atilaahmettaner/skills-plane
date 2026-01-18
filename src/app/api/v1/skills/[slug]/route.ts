@@ -17,12 +17,21 @@ export async function GET(
             );
         }
 
+        const { serializeSkillFiles, parseSkillFilesFromJSON } = await import("@/lib/skill-files");
+        let content = skill.content;
+
+        // Synthesize content for legacy CLI if it's missing but files exist
+        if (!content && skill.files) {
+            content = serializeSkillFiles(parseSkillFilesFromJSON(skill.files));
+        }
+
         return NextResponse.json({
             slug: skill.slug,
-            content: skill.content,
+            content: content,
+            files: skill.files,
             title: skill.title,
             description: skill.description,
-            version: "1.0.0", // Todo: Add versioning to DB
+            version: "1.0.0",
         });
     } catch (error) {
         console.error("Error fetching skill:", error);

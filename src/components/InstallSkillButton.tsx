@@ -7,7 +7,7 @@ import { parseSkillFiles } from "@/lib/skill-files";
 
 interface InstallSkillButtonProps {
     slug: string;
-    content: string;
+    content: string | any;
     githubUrl?: string; // Optional GitHub URL
 }
 

@@ -5,7 +5,7 @@ import { createSkill } from "@/domain/skills/actions";
 import { useState } from "react";
 import { IconSend, IconBrandGithub, IconDownload } from "@tabler/icons-react";
 import { SkillEditor } from "./SkillEditor";
-import { DEFAULT_SKILL_CONTENT, DEFAULT_SKILL_FILE, serializeSkillFiles } from "@/lib/skill-files";
+import { DEFAULT_SKILL_CONTENT, DEFAULT_SKILL_FILE, serializeSkillFilesToJSON, parseSkillFiles } from "@/lib/skill-files";
 
 export function SkillForm() {
     const [loading, setLoading] = useState(false);
@@ -15,11 +15,8 @@ export function SkillForm() {
     const [githubSuccess, setGithubSuccess] = useState<string | null>(null);
     const [availableSkills, setAvailableSkills] = useState<Array<{ name: string; path: string; category?: string }>>([]);
     const [repoStructure, setRepoStructure] = useState<any>(null);
-    const [content, setContent] = useState(() =>
-        serializeSkillFiles([
-            {
-                filename: DEFAULT_SKILL_FILE,
-                content: `---
+    const [content, setContent] = useState<any>(() => ({
+        [DEFAULT_SKILL_FILE]: `---
 name: My New Skill
 description: A brief description of what this skill does.
 version: 1.0.0
@@ -29,22 +26,11 @@ version: 1.0.0
 
 1. Add your clear, step-by-step instructions here.
 2. Explain how the agent should think when using this skill.
-`
-            },
-            {
-                filename: "rules/AGENTS.md",
-                content: "# AI Behavior Rules\n\n- Role: Senior Software Engineer\n- Tone: Professional, concise\n- Constraints: No deprecated APIs"
-            },
-            {
-                filename: "scripts/deploy.sh",
-                content: "#!/bin/bash\n# Helper scripts for the agent to run\necho 'Initializing skill environment...'"
-            },
-            {
-                filename: "tests/verify.md",
-                content: "# Verification Steps\n\n- [ ] Test case 1: ...\n- [ ] Test case 2: ..."
-            }
-        ])
-    );
+`,
+        "rules/AGENTS.md": "# AI Behavior Rules\n\n- Role: Senior Software Engineer\n- Tone: Professional, concise\n- Constraints: No deprecated APIs",
+        "scripts/deploy.sh": "#!/bin/bash\n# Helper scripts for the agent to run\necho 'Initializing skill environment...'",
+        "tests/verify.md": "# Verification Steps\n\n- [ ] Test case 1: ...\n- [ ] Test case 2: ..."
+    }));
 
     // Validate GitHub URL and show repository structure
     const handleFetchGithub = async () => {
@@ -237,11 +223,13 @@ version: 1.0.0
 
                         <TextInput
                             name="title"
-                            label={<Text size="sm" fw={600} className="text-bright">Skill Title</Text>}
+                            label="Skill Title"
                             placeholder="e.g., React Performance Hooks"
-                            description={githubUrl ? <Text size="xs" className="text-dimmed">Leave empty to use repository name</Text> : undefined}
+                            description={githubUrl ? "Leave empty to use repository name" : undefined}
                             required={!githubUrl}
                             styles={{
+                                label: { color: 'var(--mantine-color-white)', fontWeight: 600, fontSize: '13px', marginBottom: '4px' },
+                                description: { color: 'rgba(255, 255, 255, 0.5)', fontSize: '11px', marginBottom: '8px' },
                                 input: {
                                     background: 'rgba(255, 255, 255, 0.03)',
                                     border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -251,8 +239,8 @@ version: 1.0.0
                         />
                         <TextInput
                             name="slug"
-                            label={<Text size="sm" fw={600} className="text-bright">Slug</Text>}
-                            description={githubUrl ? <Text size="xs" className="text-dimmed">Leave empty to auto-generate from title/repo</Text> : <Text size="xs" className="text-dimmed">Unique URL identifier (lowercase, hyphens only)</Text>}
+                            label="Slug"
+                            description={githubUrl ? "Leave empty to auto-generate from title/repo" : "Unique URL identifier (lowercase, hyphens only)"}
                             placeholder="react-performance-hooks"
                             required={!githubUrl}
                             onChange={(e) => {
@@ -260,6 +248,8 @@ version: 1.0.0
                                 e.target.value = val;
                             }}
                             styles={{
+                                label: { color: 'var(--mantine-color-white)', fontWeight: 600, fontSize: '13px', marginBottom: '4px' },
+                                description: { color: 'rgba(255, 255, 255, 0.5)', fontSize: '11px', marginBottom: '8px' },
                                 input: {
                                     background: 'rgba(255, 255, 255, 0.03)',
                                     border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -269,11 +259,13 @@ version: 1.0.0
                         />
                         <Textarea
                             name="description"
-                            label={<Text size="sm" fw={600} className="text-bright">Short Description</Text>}
+                            label="Short Description"
                             placeholder="Brief summary of what this skill does..."
-                            description={githubUrl ? <Text size="xs" className="text-dimmed">Optional - will be fetched from GitHub if empty</Text> : undefined}
+                            description={githubUrl ? "Optional - will be fetched from GitHub if empty" : undefined}
                             rows={3}
                             styles={{
+                                label: { color: 'var(--mantine-color-white)', fontWeight: 600, fontSize: '13px', marginBottom: '4px' },
+                                description: { color: 'rgba(255, 255, 255, 0.5)', fontSize: '11px', marginBottom: '8px' },
                                 input: {
                                     background: 'rgba(255, 255, 255, 0.03)',
                                     border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -310,8 +302,8 @@ version: 1.0.0
                                     }}
                                 />
                             </Box>
-                            {/* Hidden input to pass content and github_url to Server Action */}
-                            <input type="hidden" name="content" value={content} />
+                            {/* Hidden input to pass files and github_url to Server Action */}
+                            <input type="hidden" name="files" value={JSON.stringify(content)} />
                             <input type="hidden" name="github_url" value={githubUrl} />
                         </Stack>
 

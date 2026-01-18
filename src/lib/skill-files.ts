@@ -16,7 +16,10 @@ Describe what this skill does and how the agent should use it.
 const FILE_DELIMITER_REGEX = /^=== ([\w\-. /]+) ===$/;
 const FILE_DELIMITER_TEMPLATE = (filename: string) => `=== ${filename} ===`;
 
-export function parseSkillFiles(content: string): SkillFile[] {
+/**
+ * Parses files from the old delimiter-based string format
+ */
+export function parseSkillFilesFromDelimiterString(content: string): SkillFile[] {
     if (!content || !content.trim()) {
         return [{ filename: DEFAULT_SKILL_FILE, content: DEFAULT_SKILL_CONTENT }];
     }
@@ -34,18 +37,15 @@ export function parseSkillFiles(content: string): SkillFile[] {
     for (const line of lines) {
         const match = line.match(FILE_DELIMITER_REGEX);
         if (match) {
-            // Save previous file
             if (currentFilename) {
                 files.push({
                     filename: currentFilename,
                     content: currentContent.join("\n").trim(),
                 });
             }
-            // Start new file
             currentFilename = match[1];
             currentContent = [];
         } else {
-            // If we are at the very beginning and no currentFilename (shouldn't happen with the logic above), set to SKILL.md
             if (!currentFilename) {
                 currentFilename = DEFAULT_SKILL_FILE;
             }
@@ -53,7 +53,6 @@ export function parseSkillFiles(content: string): SkillFile[] {
         }
     }
 
-    // Save last file
     if (currentFilename) {
         files.push({
             filename: currentFilename,
@@ -61,26 +60,66 @@ export function parseSkillFiles(content: string): SkillFile[] {
         });
     }
 
-    // Cleanup: Merge multiple SKILL.md if they somehow appeared, and ensure SKILL.md is first
+    return files;
+}
+
+/**
+ * Parses files from the new JSONB format
+ */
+export function parseSkillFilesFromJSON(filesJson: any): SkillFile[] {
+    if (!filesJson || typeof filesJson !== 'object' || Array.isArray(filesJson)) {
+        return [{ filename: DEFAULT_SKILL_FILE, content: DEFAULT_SKILL_CONTENT }];
+    }
+
+    const files: SkillFile[] = Object.entries(filesJson).map(([filename, content]) => ({
+        filename,
+        content: String(content)
+    }));
+
+    // Ensure SKILL.md is first
     const skillMdFiles = files.filter(f => f.filename === DEFAULT_SKILL_FILE);
     const otherFiles = files.filter(f => f.filename !== DEFAULT_SKILL_FILE);
 
-    const finalFiles: SkillFile[] = [];
-
-    if (skillMdFiles.length > 0) {
-        finalFiles.push({
-            filename: DEFAULT_SKILL_FILE,
-            content: skillMdFiles.map(f => f.content).join("\n\n")
-        });
-    } else {
-        finalFiles.push({ filename: DEFAULT_SKILL_FILE, content: DEFAULT_SKILL_CONTENT });
+    if (skillMdFiles.length === 0) {
+        return [{ filename: DEFAULT_SKILL_FILE, content: DEFAULT_SKILL_CONTENT }, ...otherFiles];
     }
 
-    finalFiles.push(...otherFiles);
-
-    return finalFiles;
+    return [...skillMdFiles, ...otherFiles];
 }
 
+/**
+ * Main parser that handles both formats
+ */
+export function parseSkillFiles(content: string | any): SkillFile[] {
+    if (typeof content === 'object' && content !== null) {
+        return parseSkillFilesFromJSON(content);
+    }
+
+    if (typeof content === 'string' && (content.startsWith('{') || content.trim().startsWith('{'))) {
+        try {
+            return parseSkillFilesFromJSON(JSON.parse(content));
+        } catch (e) {
+            // Fallback to string parsing if JSON parsing fails
+        }
+    }
+
+    return parseSkillFilesFromDelimiterString(String(content || ''));
+}
+
+/**
+ * Serializes files to the new JSONB-ready object format
+ */
+export function serializeSkillFilesToJSON(files: SkillFile[]): Record<string, string> {
+    const result: Record<string, string> = {};
+    files.forEach(file => {
+        result[file.filename] = file.content;
+    });
+    return result;
+}
+
+/**
+ * Legacy serializer for backward compatibility if needed
+ */
 export function serializeSkillFiles(files: SkillFile[]): string {
     return files
         .map(

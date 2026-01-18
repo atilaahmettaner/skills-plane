@@ -40,12 +40,21 @@ async function main() {
 
         const data = await response.json();
 
-        if (!data.content) {
-            throw new Error('Skill content is empty.');
+        let files = [];
+        if (data.files && typeof data.files === 'object' && Object.keys(data.files).length > 0) {
+            // Support new JSONB structure
+            files = Object.entries(data.files).map(([filename, content]) => ({
+                filename,
+                content: String(content || '')
+            }));
+        } else if (data.content) {
+            // Support legacy string structure
+            files = parseSkillFiles(data.content);
         }
 
-        // 2. Parse Content
-        const files = parseSkillFiles(data.content);
+        if (files.length === 0) {
+            throw new Error('Skill content is empty.');
+        }
 
         // 3. Write Files
         const targetDir = path.join('.agent', 'skills', slug);

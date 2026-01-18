@@ -14,11 +14,13 @@ import {
     IconFolderOpen,
     IconSettings,
     IconShieldCheck,
-    IconMessageCircle
+    IconMessageCircle,
+    IconFolderPlus
 } from "@tabler/icons-react";
 import {
     parseSkillFiles,
     serializeSkillFiles,
+    serializeSkillFilesToJSON,
     getLanguageFromFilename,
     validateFilename,
     suggestFilename,
@@ -27,8 +29,8 @@ import {
 } from "@/lib/skill-files";
 
 interface SkillEditorProps {
-    value: string;
-    onChange?: (value: string) => void;
+    value: string | any;
+    onChange?: (value: any) => void;
     className?: string;
     style?: React.CSSProperties;
     readOnly?: boolean;
@@ -104,6 +106,8 @@ interface TreeNodeItemProps {
     onToggleFolder: (path: string) => void;
     onOpenFile: (path: string) => void;
     onDeleteFile: (path: string) => void;
+    onAddFile: (basePath?: string) => void;
+    onAddFolder: (basePath?: string) => void;
     readOnly?: boolean;
 }
 
@@ -115,6 +119,8 @@ function TreeNodeItem({
     onToggleFolder,
     onOpenFile,
     onDeleteFile,
+    onAddFile,
+    onAddFolder,
     readOnly,
 }: TreeNodeItemProps) {
     const isExpanded = expandedFolders.has(node.path);
@@ -134,8 +140,18 @@ function TreeNodeItem({
                         userSelect: "none"
                     }}
                     onClick={() => onToggleFolder(node.path)}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)" }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent" }}
+                    onMouseEnter={(e) => {
+                        const target = e.currentTarget;
+                        target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+                        const actions = target.querySelector('.folder-actions') as HTMLElement | null;
+                        if (actions) actions.style.opacity = '1';
+                    }}
+                    onMouseLeave={(e) => {
+                        const target = e.currentTarget;
+                        target.style.backgroundColor = "transparent";
+                        const actions = target.querySelector('.folder-actions') as HTMLElement | null;
+                        if (actions) actions.style.opacity = '0';
+                    }}
                 >
                     {isExpanded ? (
                         <IconChevronDown size={14} style={{ opacity: 0.5 }} />
@@ -159,6 +175,32 @@ function TreeNodeItem({
                         );
                     })()}
                     <Text size="xs" truncate fw={500} style={{ flex: 1 }}>{node.name}</Text>
+                    {!readOnly && (
+                        <Group gap={2} className="folder-actions" style={{ opacity: 0, transition: 'opacity 0.2s' }}>
+                            <ActionIcon
+                                size="xs"
+                                variant="transparent"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAddFile(node.path);
+                                }}
+                                title="New File"
+                            >
+                                <IconFilePlus size={12} color="#22e1fe" />
+                            </ActionIcon>
+                            <ActionIcon
+                                size="xs"
+                                variant="transparent"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAddFolder(node.path);
+                                }}
+                                title="New Folder"
+                            >
+                                <IconFolderPlus size={12} color="#22e1fe" />
+                            </ActionIcon>
+                        </Group>
+                    )}
                 </Group>
                 {isExpanded && (
                     <Box>
@@ -172,6 +214,8 @@ function TreeNodeItem({
                                 onToggleFolder={onToggleFolder}
                                 onOpenFile={onOpenFile}
                                 onDeleteFile={onDeleteFile}
+                                onAddFile={onAddFile}
+                                onAddFolder={onAddFolder}
                                 readOnly={readOnly}
                             />
                         ))}
@@ -242,8 +286,12 @@ export function SkillEditor({ value, onChange, className, style, readOnly = fals
 
     // Dialog states
     const [showNewFileDialog, setShowNewFileDialog] = useState(false);
+    const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
     const [newFilename, setNewFilename] = useState("");
+    const [newFolderName, setNewFolderName] = useState("");
+    const [creationPath, setCreationPath] = useState<string | null>(null);
     const [filenameError, setFilenameError] = useState<string | null>(null);
+    const [folderNameError, setFolderNameError] = useState<string | null>(null);
     const [fileToDelete, setFileToDelete] = useState<string | null>(null);
 
     // Expanded folders state
@@ -283,7 +331,7 @@ export function SkillEditor({ value, onChange, className, style, readOnly = fals
                 clearTimeout(debounceTimerRef.current);
             }
             debounceTimerRef.current = setTimeout(() => {
-                onChange?.(serializeSkillFiles(newFiles));
+                onChange?.(serializeSkillFilesToJSON(newFiles));
             }, 300);
         },
         [onChange]
@@ -346,16 +394,25 @@ export function SkillEditor({ value, onChange, className, style, readOnly = fals
     );
 
     // Add a new file
-    const handleAddFile = useCallback(() => {
+    const handleAddFile = useCallback((basePath?: string) => {
         const suggestion = suggestFilename(files.map((f) => f.filename));
         setNewFilename(suggestion);
+        setCreationPath(basePath || null);
         setFilenameError(null);
         setShowNewFileDialog(true);
     }, [files]);
 
+    const handleAddFolder = useCallback((basePath?: string) => {
+        setNewFolderName("");
+        setCreationPath(basePath || null);
+        setFolderNameError(null);
+        setShowNewFolderDialog(true);
+    }, []);
+
     const confirmAddFile = useCallback(() => {
+        const fullPath = creationPath ? `${creationPath}/${newFilename.trim()}` : newFilename.trim();
         const errorCode = validateFilename(
-            newFilename,
+            fullPath,
             files.map((f) => f.filename)
         );
         if (errorCode) {
@@ -364,20 +421,64 @@ export function SkillEditor({ value, onChange, className, style, readOnly = fals
         }
 
         const trimmed = newFilename.trim();
-        // Support creating files in folders
-        const newFiles = [...files, { filename: trimmed, content: "" }];
-        updateFiles(newFiles);
-        openFile(trimmed);
+        const finalPath = creationPath ? `${creationPath}/${trimmed}` : trimmed;
 
-        // Auto-expand folder if created in one
-        if (trimmed.includes("/")) {
-            const folderPath = trimmed.split("/").slice(0, -1).join("/");
-            setExpandedFolders(prev => new Set(prev).add(folderPath));
+        // Support creating files in folders
+        const newFiles = [...files, { filename: finalPath, content: "" }];
+        updateFiles(newFiles);
+        openFile(finalPath);
+
+        // Auto-expand parent folders
+        if (finalPath.includes("/")) {
+            const parts = finalPath.split("/");
+            let current = "";
+            for (let i = 0; i < parts.length - 1; i++) {
+                current = current ? `${current}/${parts[i]}` : parts[i];
+                setExpandedFolders(prev => new Set(prev).add(current));
+            }
         }
 
         setShowNewFileDialog(false);
         setNewFilename("");
-    }, [newFilename, files, updateFiles, openFile]);
+        setCreationPath(null);
+    }, [newFilename, files, updateFiles, openFile, creationPath]);
+
+    const confirmAddFolder = useCallback(() => {
+        if (!newFolderName.trim()) {
+            setFolderNameError("Folder name cannot be empty");
+            return;
+        }
+
+        const trimmed = newFolderName.trim();
+        const finalPath = creationPath ? `${creationPath}/${trimmed}` : trimmed;
+
+        // Folders are implicit in our flat file structure, 
+        // but we can create a dummy file to ensure the folder shows up if it's empty,
+        // or just let it be created once a file is added to it.
+        // Actually, let's create a .gitkeep or a blank SKILL.md if it's a new root folder,
+        // but for now, we'll just expand it if we create a file inside.
+        // To truly "create a folder" in a flat list without a file is tricky,
+        // so we'll add a file like `${finalPath}/.gitkeep` to make it visible.
+
+        const gitKeepPath = `${finalPath}/.gitkeep`;
+        if (files.some(f => f.filename.startsWith(finalPath + "/"))) {
+            setFolderNameError("Folder already exists or conflict");
+            return;
+        }
+
+        const newFiles = [...files, { filename: gitKeepPath, content: "" }];
+        updateFiles(newFiles);
+
+        // Expand the new folder
+        setExpandedFolders(prev => new Set(prev).add(finalPath));
+        if (creationPath) {
+            setExpandedFolders(prev => new Set(prev).add(creationPath));
+        }
+
+        setShowNewFolderDialog(false);
+        setNewFolderName("");
+        setCreationPath(null);
+    }, [newFolderName, files, updateFiles, creationPath]);
 
     // Delete a file
     const handleDeleteFile = useCallback((filename: string) => {
@@ -397,13 +498,15 @@ export function SkillEditor({ value, onChange, className, style, readOnly = fals
     // Re-parse when external value changes significantly
     useEffect(() => {
         if (!value) return;
-        // Simple check to avoid loop, could be more robust
-        const currentSerialized = serializeSkillFiles(files);
-        if (value !== currentSerialized) {
+
+        // Simple check to avoid loop - check if JSON strings match
+        const currentJSON = JSON.stringify(serializeSkillFilesToJSON(files));
+        const incomingJSON = typeof value === 'string' ? value : JSON.stringify(value);
+
+        if (incomingJSON !== currentJSON) {
             const parsed = parseSkillFiles(value);
             if (parsed.length > 0) {
                 setFiles(parsed);
-                // If active file is gone, reset
                 if (!parsed.find(f => f.filename === activeFile)) {
                     setActiveFile(DEFAULT_SKILL_FILE);
                 }
@@ -426,9 +529,14 @@ export function SkillEditor({ value, onChange, className, style, readOnly = fals
                         <Text size="xs" fw={700} tt="uppercase" className="text-bright" style={{ letterSpacing: '0.5px' }}>Explorer</Text>
                     </Group>
                     {!readOnly && (
-                        <ActionIcon size="xs" variant="subtle" onClick={handleAddFile} title="New File">
-                            <IconFilePlus size={14} />
-                        </ActionIcon>
+                        <Group gap={4}>
+                            <ActionIcon size="xs" variant="subtle" onClick={() => handleAddFile()} title="New File">
+                                <IconFilePlus size={14} />
+                            </ActionIcon>
+                            <ActionIcon size="xs" variant="subtle" onClick={() => handleAddFolder()} title="New Folder">
+                                <IconFolderPlus size={14} />
+                            </ActionIcon>
+                        </Group>
                     )}
                 </Group>
 
@@ -444,6 +552,8 @@ export function SkillEditor({ value, onChange, className, style, readOnly = fals
                                 onToggleFolder={toggleFolder}
                                 onOpenFile={openFile}
                                 onDeleteFile={handleDeleteFile}
+                                onAddFile={handleAddFile}
+                                onAddFolder={handleAddFolder}
                                 readOnly={readOnly}
                             />
                         ))}
@@ -532,7 +642,32 @@ export function SkillEditor({ value, onChange, className, style, readOnly = fals
                     />
                     <Group justify="flex-end">
                         <Button variant="default" onClick={() => setShowNewFileDialog(false)}>Cancel</Button>
-                        <Button onClick={confirmAddFile}>Create File</Button>
+                        <Button onClick={confirmAddFile} color="cyan">Create File</Button>
+                    </Group>
+                </Stack>
+            </Modal>
+
+            {/* New Folder Modal */}
+            <Modal opened={showNewFolderDialog} onClose={() => setShowNewFolderDialog(false)} title="Add New Folder" centered size="sm">
+                <Stack>
+                    <TextInput
+                        label="Folder Name"
+                        placeholder="my-folder"
+                        value={newFolderName}
+                        onChange={(e) => {
+                            setNewFolderName(e.target.value);
+                            setFolderNameError(null);
+                        }}
+                        error={folderNameError}
+                        description={creationPath ? `Creating in: ${creationPath}` : undefined}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') confirmAddFolder();
+                        }}
+                        data-autofocus
+                    />
+                    <Group justify="flex-end">
+                        <Button variant="default" onClick={() => setShowNewFolderDialog(false)}>Cancel</Button>
+                        <Button onClick={confirmAddFolder} color="cyan">Create Folder</Button>
                     </Group>
                 </Stack>
             </Modal>

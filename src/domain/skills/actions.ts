@@ -18,8 +18,22 @@ export async function createSkill(formData: FormData) {
     let title = formData.get("title") as string;
     let slug = formData.get("slug") as string;
     const description = formData.get("description") as string;
-    const content = formData.get("content") as string;
+    const content = formData.get("content") as string | null;
+    const filesStr = formData.get("files") as string | null;
     const githubUrl = formData.get("github_url") as string | null;
+
+    let files: any = {};
+    if (filesStr) {
+        try {
+            files = JSON.parse(filesStr);
+        } catch (e) {
+            console.error("Failed to parse files JSON:", e);
+        }
+    } else if (content) {
+        // Fallback for transition
+        const { parseSkillFiles, serializeSkillFilesToJSON } = await import("@/lib/skill-files");
+        files = serializeSkillFilesToJSON(parseSkillFiles(content));
+    }
 
     // If GitHub URL provided but no title/slug, extract from URL
     if (githubUrl && (!title || !slug)) {
@@ -47,9 +61,9 @@ export async function createSkill(formData: FormData) {
         slug = slug.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     }
 
-    // Validation: Either GitHub URL or content must be provided
-    if (!githubUrl && !content) {
-        throw new Error("Either GitHub URL or content must be provided");
+    // Validation: Either GitHub URL or files must be provided
+    if (!githubUrl && Object.keys(files).length === 0) {
+        throw new Error("Either GitHub URL or skill content must be provided");
     }
 
     // Title and slug are required
@@ -61,10 +75,11 @@ export async function createSkill(formData: FormData) {
         title,
         slug,
         description: description || null,
-        content: content || null,
+        files: files,
+        content: content || null, // Keep for backward compatibility during transition
         github_url: githubUrl || null,
         author_id: user.id,
-        is_official: false, // User submissions are unofficial by default
+        is_official: false,
     });
 
     if (error) {

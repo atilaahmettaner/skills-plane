@@ -48,12 +48,12 @@ export default async function SkillDetailPage({ params }: { params: Promise<{ sl
 
                 {/* Action Buttons */}
                 <Group gap="xs" mt="md" mb="xl">
-                    <InstallSkillButton slug={skill.slug} content={skill.content || ""} />
-                    <DownloadSkillButton slug={skill.slug} content={skill.content || ""} />
+                    <InstallSkillButton slug={skill.slug} content={skill.files || skill.content || ""} />
+                    <DownloadSkillButton slug={skill.slug} content={skill.files || skill.content || ""} />
                 </Group>
 
                 <SkillEditor
-                    value={skill.content || ""}
+                    value={skill.files || skill.content || ""}
                     readOnly
                     style={{ height: 600 }}
                 />

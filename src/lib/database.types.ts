@@ -46,6 +46,7 @@ export interface Database {
                     title: string
                     description: string | null
                     content: string | null
+                    files: Json | null
                     author_id: string
                     is_official: boolean
                     github_url: string | null
@@ -58,6 +59,7 @@ export interface Database {
                     title: string
                     description?: string | null
                     content?: string | null
+                    files?: Json | null
                     author_id: string
                     is_official?: boolean
                     created_at?: string
@@ -69,6 +71,7 @@ export interface Database {
                     title?: string
                     description?: string | null
                     content?: string | null
+                    files?: Json | null
                     author_id?: string
                     is_official?: boolean
                     created_at?: string
@@ -82,6 +85,7 @@ export interface Database {
                     title: string
                     description: string | null
                     content: string | null
+                    files: Json | null
                     author_id: string
                     is_official: boolean
                     created_at: string
@@ -93,6 +97,7 @@ export interface Database {
                     title: string
                     description?: string | null
                     content?: string | null
+                    files?: Json | null
                     author_id: string
                     is_official?: boolean
                     created_at?: string
@@ -104,6 +109,7 @@ export interface Database {
                     title?: string
                     description?: string | null
                     content?: string | null
+                    files?: Json | null
                     author_id?: string
                     is_official?: boolean
                     created_at?: string
@@ -117,6 +123,7 @@ export interface Database {
                     title: string
                     description: string | null
                     content: string | null
+                    files: Json | null
                     steps: Json | null
                     author_id: string
                     is_official: boolean
@@ -129,6 +136,7 @@ export interface Database {
                     title: string
                     description?: string | null
                     content?: string | null
+                    files?: Json | null
                     steps?: Json | null
                     author_id: string
                     is_official?: boolean
@@ -141,6 +149,7 @@ export interface Database {
                     title?: string
                     description?: string | null
                     content?: string | null
+                    files?: Json | null
                     steps?: Json | null
                     author_id?: string
                     is_official?: boolean
