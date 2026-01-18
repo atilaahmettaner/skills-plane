@@ -9,16 +9,14 @@ export function HeroButtons() {
         <Group mt="md">
             <Button
                 component={Link}
-                href="/dashboard"
+                href="/skills"
                 size="lg"
+                variant="gradient"
+                gradient={{ from: 'cyan', to: 'blue' }}
                 radius="md"
-                px={40}
-                variant="filled"
-                color="cyan"
-                leftSection={<IconSearch size={20} />}
-                styles={{ root: { height: '54px' } }}
+                style={{ height: 54, paddingLeft: 30, paddingRight: 30 }}
             >
-                Browse Skills
+                Explore Skills
             </Button>
             <Button
                 component={Link}

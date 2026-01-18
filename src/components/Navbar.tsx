@@ -66,20 +66,31 @@ export function Navbar() {
                     </Link>
 
                     <Group gap="xl">
-                        <Box
-                            visibleFrom="sm"
-                            px="md"
-                            py={6}
-                            style={{
-                                background: 'rgba(255, 255, 255, 0.03)',
-                                borderRadius: '8px',
-                                border: '1px solid rgba(255, 255, 255, 0.05)'
-                            }}
-                        >
-                            <Text ff="monospace" size="xs" c="dimmed">$ npx skills-plane search</Text>
-                        </Box>
+                        <Link href="/skills" style={{ textDecoration: 'none' }}>
+                            <Box
+                                visibleFrom="sm"
+                                px="md"
+                                py={6}
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.03)',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <Text ff="monospace" size="xs" c="dimmed">$ npx skills-plane search</Text>
+                            </Box>
+                        </Link>
                         {user ? (
                             <Group>
+                                <Button
+                                    component={Link}
+                                    href="/skills"
+                                    variant="subtle"
+                                    visibleFrom="xs"
+                                >
+                                    Explore Library
+                                </Button>
                                 <Button
                                     component={Link}
                                     href="/skills/new"
