@@ -52,9 +52,6 @@ export default async function Home() {
             A massive open-source marketplace to discover agent skills and build complex autonomous workflows.
           </Text>
 
-          {/* CLI Box */}
-          <CopyCommand command="npx add-skill atilaahmettaner/skills-plane" />
-
           <HeroButtons />
         </Stack>
 

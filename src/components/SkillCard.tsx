@@ -27,33 +27,7 @@ export function SkillCard({ skill }: { skill: SkillWithProfile }) {
             }}
         >
             <Box>
-                <Group justify="space-between" mb="lg" align="flex-start">
-                    <Box
-                        p={10}
-                        style={{
-                            background: isOrg ? 'rgba(34, 225, 254, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(255, 255, 255, 0.05)'
-                        }}
-                    >
-                        <Avatar
-                            src={skill.profiles?.avatar_url || ""}
-                            size="md"
-                            radius={isOrg ? "sm" : "xl"}
-                            styles={{
-                                image: {
-                                    objectFit: isOrg ? 'contain' : 'cover',
-                                    padding: isOrg ? '2px' : '0'
-                                },
-                                placeholder: {
-                                    background: 'transparent',
-                                    color: '#22e1fe'
-                                }
-                            }}
-                        >
-                            {isOrg ? "O" : "U"}
-                        </Avatar>
-                    </Box>
+                <Group justify="flex-end" mb="xs">
                     <Stack gap={4} align="flex-end">
                         {skill.is_official && (
                             <Badge variant="outline" color="cyan" size="sm" styles={{ root: { border: '1px solid rgba(34, 225, 254, 0.3)', background: 'rgba(34, 225, 254, 0.05)' } }}>Official</Badge>

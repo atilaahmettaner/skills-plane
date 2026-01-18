@@ -37,9 +37,6 @@ export default async function SkillDetailPage({ params }: { params: Promise<{ sl
                             {skill.is_official && <Badge color="blue" variant="light">Official</Badge>}
                         </Group>
                     </Stack>
-                    <Box>
-                        <CopyCommand command={`npx skills-plane add ${skill.slug}`} />
-                    </Box>
                 </Group>
 
                 <Text size="lg" mb="xl" className="text-dimmed">
@@ -47,7 +44,7 @@ export default async function SkillDetailPage({ params }: { params: Promise<{ sl
                 </Text>
 
                 {/* Installation Commands */}
-                <InstallCommands slug={skill.slug} />
+                <InstallCommands slug={skill.slug} githubUrl={skill.github_url || undefined} />
 
                 {/* Action Buttons */}
                 <Group gap="xs" mt="md" mb="xl">

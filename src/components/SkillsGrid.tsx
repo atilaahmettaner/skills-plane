@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Stack, SimpleGrid, TextInput, Group, Badge, Card, Box, Text } from "@mantine/core";
-import { IconSearch, IconRocket, IconArrowRight } from "@tabler/icons-react";
+import { Stack, SimpleGrid, TextInput, Group, Badge, Card, Box, Text, Button } from "@mantine/core";
+import { IconSearch, IconArrowRight, IconPlus } from "@tabler/icons-react";
 import { SkillCard } from "@/components/SkillCard";
 import { CopyCommand } from "@/components/CopyCommand";
 import { Database } from "@/lib/database.types";
+import Link from "next/link";
 
 type SkillWithProfile = Database["public"]["Tables"]["skills"]["Row"] & {
     profiles: Database["public"]["Tables"]["profiles"]["Row"] | null;
@@ -52,32 +53,51 @@ export function SkillsGrid({ skills }: SkillsGridProps) {
 
             {/* Featured Content & Grid */}
             <Stack gap="xl">
-                {/* Featured Feature Card */}
+                {/* Community Contribution CTA */}
                 <Card
                     className="glass-card"
                     padding={40}
                     radius="lg"
-                    style={{ border: '1px solid rgba(34, 225, 254, 0.2)', background: 'linear-gradient(135deg, rgba(34, 225, 254, 0.05) 0%, transparent 100%)' }}
+                    component={Link}
+                    href="/skills/new"
+                    style={{
+                        border: '1px solid rgba(34, 225, 254, 0.3)',
+                        background: 'linear-gradient(135deg, rgba(34, 225, 254, 0.08) 0%, transparent 100%)',
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s ease, border-color 0.2s ease'
+                    }}
+                    onMouseEnter={(e: React.MouseEvent) => {
+                        e.currentTarget.setAttribute('style', `
+                            border: 1px solid rgba(34, 225, 254, 0.5);
+                            background: linear-gradient(135deg, rgba(34, 225, 254, 0.08) 0%, transparent 100%);
+                            cursor: pointer;
+                            transition: transform 0.2s ease, border-color 0.2s ease;
+                            transform: translateY(-4px);
+                        `);
+                    }}
+                    onMouseLeave={(e: React.MouseEvent) => {
+                        e.currentTarget.setAttribute('style', `
+                            border: 1px solid rgba(34, 225, 254, 0.3);
+                            background: linear-gradient(135deg, rgba(34, 225, 254, 0.08) 0%, transparent 100%);
+                            cursor: pointer;
+                            transition: transform 0.2s ease, border-color 0.2s ease;
+                            transform: translateY(0);
+                        `);
+                    }}
                 >
-                    <Group justify="space-between" align="stretch">
+                    <Group justify="space-between" align="center">
                         <Group gap="xl">
-                            <Box p={20} style={{ borderRadius: '16px', background: 'rgba(34, 225, 254, 0.1)' }}>
-                                <IconRocket size={40} color="#22e1fe" />
+                            <Box p={12} style={{ borderRadius: '12px', background: 'rgba(34, 225, 254, 0.15)' }}>
+                                <IconPlus size={24} color="#22e1fe" />
                             </Box>
                             <Stack gap={4}>
-                                <Group gap="xs">
-                                    <Text size="xl" fw={700} className="text-bright">Workflow Builder</Text>
-                                    <Badge size="xs" color="cyan" variant="filled">✓</Badge>
-                                </Group>
-                                <Text className="text-dimmed" size="lg" style={{ maxWidth: 400 }}>
-                                    Visual orchestration for connecting multiple agents into a unified pipeline.
+                                <Text size="xl" fw={800} className="text-bright">Contribute Your First Skill</Text>
+                                <Text className="text-dimmed" size="lg" style={{ maxWidth: 500 }}>
+                                    Join the community and share your specialized agent skills with thousands of developers.
                                 </Text>
-                                <Box mt="md">
-                                    <CopyCommand command="npx add-skill vercel-labs/add-skill" />
-                                </Box>
                             </Stack>
                         </Group>
-                        <IconArrowRight size={32} style={{ alignSelf: 'center' }} color="rgba(255,255,255,0.2)" />
+                        <Button variant="light" color="cyan" radius="md">Share Skill</Button>
                     </Group>
                 </Card>
 
