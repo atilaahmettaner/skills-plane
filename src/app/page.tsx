@@ -1,65 +1,165 @@
-import Image from "next/image";
+import { Container, Title, Text, Button, Group, Stack, SimpleGrid, Badge, Box, TextInput, Card, Avatar, AvatarGroup } from "@mantine/core";
+import { IconRocket, IconSearch, IconUpload, IconCopy, IconArrowRight } from "@tabler/icons-react";
+import { listSkills } from "@/domain/skills/repository";
+import { SkillCard } from "@/components/SkillCard";
+import { Database } from "@/lib/database.types";
 
-export default function Home() {
+type SkillWithProfile = Database["public"]["Tables"]["skills"]["Row"] & {
+  profiles: Database["public"]["Tables"]["profiles"]["Row"] | null;
+};
+
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const skills = await listSkills();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <Box style={{ position: 'relative', overflow: 'hidden' }}>
+      <div className="hero-glow" />
+
+      <Container size="lg" py="xl">
+        {/* Hero Section */}
+        <Stack align="center" gap="xl" py={80}>
+          <Badge
+            variant="outline"
+            color="cyan"
+            size="lg"
+            radius="xl"
+            styles={{ root: { borderWidth: '1px', textTransform: 'uppercase', letterSpacing: '1px' } }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            ✧ Community-driven intelligence
+          </Badge>
+
+          <Title
+            order={1}
+            size={72}
+            style={{
+              textAlign: "center",
+              fontWeight: 900,
+              lineHeight: 1.1,
+              maxWidth: 800
+            }}
           >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            The Global Library of <span className="gradient-text">Intelligence</span>
+          </Title>
+
+          <Text
+            size="xl"
+            className="text-dimmed"
+            style={{ textAlign: "center", maxWidth: 550, lineHeight: 1.6 }}
+          >
+            A massive open-source marketplace to discover agent skills and build complex autonomous workflows.
+          </Text>
+
+          {/* CLI Box */}
+          <Group
+            gap="xs"
+            px="md"
+            py={8}
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '10px',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}
+          >
+            <Text ff="monospace" size="sm" c="cyan">npx</Text>
+            <Text ff="monospace" size="sm">skills-plane search</Text>
+            <IconCopy size={14} style={{ cursor: 'pointer', opacity: 0.5 }} />
+          </Group>
+
+          <Group mt="md">
+            <Button
+              size="lg"
+              radius="md"
+              px={40}
+              variant="filled"
+              color="cyan"
+              leftSection={<IconSearch size={20} />}
+              styles={{ root: { height: '54px' } }}
+            >
+              Browse Skills
+            </Button>
+            <Button
+              size="lg"
+              radius="md"
+              px={40}
+              variant="outline"
+              color="gray"
+              leftSection={<IconUpload size={20} />}
+              styles={{ root: { height: '54px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.02)' } }}
+            >
+              Submit Skill
+            </Button>
+          </Group>
+        </Stack>
+
+        {/* Search & Filter Section */}
+        <Stack gap="xl" mt={40} mb={60}>
+          <TextInput
+            placeholder="Search 2,400+ agent skills..."
+            size="xl"
+            radius="md"
+            leftSection={<IconSearch size={20} style={{ opacity: 0.5 }} />}
+            styles={{
+              input: {
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                fontSize: '18px'
+              }
+            }}
+          />
+
+          <Group gap="sm">
+            <Badge size="lg" radius="md" color="cyan" variant="filled" style={{ height: '36px' }}>All Categories</Badge>
+            <Badge size="lg" radius="md" variant="outline" color="gray" style={{ height: '36px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.02)', color: 'rgba(255, 255, 255, 0.7)' }}>Web Browsing</Badge>
+            <Badge size="lg" radius="md" variant="outline" color="gray" style={{ height: '36px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.02)', color: 'rgba(255, 255, 255, 0.7)' }}>Finance</Badge>
+            <Badge size="lg" radius="md" variant="outline" color="gray" style={{ height: '36px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.02)', color: 'rgba(255, 255, 255, 0.7)' }}>Coding</Badge>
+          </Group>
+        </Stack>
+
+        {/* Featured Content & Grid */}
+        <Stack gap="xl">
+          {/* Featured Feature Card (Mock for now) */}
+          <Card
+            className="glass-card"
+            padding={40}
+            radius="lg"
+            style={{ border: '1px solid rgba(34, 225, 254, 0.2)', background: 'linear-gradient(135deg, rgba(34, 225, 254, 0.05) 0%, transparent 100%)' }}
+          >
+            <Group justify="space-between" align="stretch">
+              <Group gap="xl">
+                <Box p={20} style={{ borderRadius: '16px', background: 'rgba(34, 225, 254, 0.1)' }}>
+                  <IconRocket size={40} color="#22e1fe" />
+                </Box>
+                <Stack gap={4}>
+                  <Group gap="xs">
+                    <Text size="xl" fw={700} className="text-bright">Workflow Builder</Text>
+                    <Badge size="xs" color="cyan" variant="filled">✓</Badge>
+                  </Group>
+                  <Text className="text-dimmed" size="lg" style={{ maxWidth: 400 }}>
+                    Visual orchestration for connecting multiple agents into a unified pipeline.
+                  </Text>
+                  <Group gap="xs" mt="md">
+                    <AvatarGroup>
+                      <Avatar src="" />
+                      <Avatar src="" />
+                      <Avatar src="" />
+                    </AvatarGroup>
+                    <Text size="xs" className="text-dimmed" fw={600}>8.2k builders active</Text>
+                  </Group>
+                </Stack>
+              </Group>
+              <IconArrowRight size={32} style={{ alignSelf: 'center' }} color="rgba(255,255,255,0.2)" />
+            </Group>
+          </Card>
+
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="xl">
+            {skills?.map((skill: any) => (
+              <SkillCard key={skill.id} skill={skill as SkillWithProfile} />
+            ))}
+          </SimpleGrid>
+        </Stack>
+      </Container>
+    </Box>
   );
 }
