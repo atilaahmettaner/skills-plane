@@ -1,8 +1,9 @@
-import { Container, Title, Text, Badge, Group, Avatar, Paper, Stack } from "@mantine/core";
+import { Container, Title, Text, Badge, Group, Avatar, Paper, Stack, Box } from "@mantine/core";
 import { getSkillBySlug } from "@/domain/skills/repository";
 import { notFound } from "next/navigation";
 import { Database } from "@/lib/database.types";
 import { BackButton } from "@/components/BackButton";
+import { CopyCommand } from "@/components/CopyCommand";
 import { SkillEditor } from "@/components/SkillEditor";
 import { DownloadSkillButton } from "@/components/DownloadSkillButton";
 import { InstallSkillButton } from "@/components/InstallSkillButton";
@@ -25,20 +26,23 @@ export default async function SkillDetailPage({ params }: { params: Promise<{ sl
             <BackButton />
 
             <Paper shadow="xs" p="xl" radius="md" withBorder>
-                <Group justify="space-between" align="start" mb="lg">
-                    <div>
+                <Group justify="space-between" align="center" mb="xl">
+                    <Stack gap={4}>
                         <Title order={1}>{skill.title}</Title>
-                        <Group mt="xs" gap="xs">
+                        <Group gap="xs">
                             <Avatar src={skill.profiles?.avatar_url} size="sm" radius="xl" />
                             <Text size="sm" c="dimmed">
                                 By {skill.profiles?.full_name || "Unknown"}
                             </Text>
-                            {skill.is_official && <Badge color="blue">Official</Badge>}
+                            {skill.is_official && <Badge color="blue" variant="light">Official</Badge>}
                         </Group>
-                    </div>
+                    </Stack>
+                    <Box>
+                        <CopyCommand command={`npx skills-plane add ${skill.slug}`} />
+                    </Box>
                 </Group>
 
-                <Text size="lg" mb="md">
+                <Text size="lg" mb="xl" className="text-dimmed">
                     {skill.description}
                 </Text>
 

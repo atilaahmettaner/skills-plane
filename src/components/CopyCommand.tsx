@@ -26,8 +26,8 @@ export function CopyCommand({ command }: { command: string }) {
             }}
             onClick={handleCopy}
         >
-            <Text ff="monospace" size="sm" c="cyan">npx</Text>
-            <Text ff="monospace" size="sm">skills-plane search</Text>
+            <Text ff="monospace" size="sm" c="cyan">{command.split(' ')[0]}</Text>
+            <Text ff="monospace" size="sm">{command.split(' ').slice(1).join(' ')}</Text>
             <Tooltip label={copied ? "Copied!" : "Copy"} withArrow>
                 {copied ? (
                     <IconCheck size={14} color="#22e1fe" />

@@ -15,37 +15,10 @@ export function InstallCommands({ slug, githubUrl }: InstallCommandsProps) {
     return (
         <Stack gap="sm">
             <Text size="sm" fw={500} c="dimmed">
-                Installation Commands:
+                Installation command:
             </Text>
 
-            {/* GitHub Command */}
-            {githubCommand && (
-                <Box>
-                    <Group gap="xs" wrap="nowrap">
-                        <Code style={{ flex: 1, fontSize: '0.85rem' }}>
-                            {githubCommand}
-                        </Code>
-                        <CopyButton value={githubCommand} timeout={2000}>
-                            {({ copied, copy }) => (
-                                <Button
-                                    size="xs"
-                                    variant="light"
-                                    color={copied ? 'teal' : 'blue'}
-                                    onClick={copy}
-                                    leftSection={copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
-                                >
-                                    {copied ? 'Copied!' : 'Copy'}
-                                </Button>
-                            )}
-                        </CopyButton>
-                    </Group>
-                    <Text size="xs" c="dimmed" mt={4}>
-                        📦 Install from GitHub
-                    </Text>
-                </Box>
-            )}
-
-            {/* Platform Command */}
+            {/* Platform Command - Always First */}
             <Box>
                 <Group gap="xs" wrap="nowrap">
                     <Code style={{ flex: 1, fontSize: '0.85rem' }}>
@@ -65,10 +38,31 @@ export function InstallCommands({ slug, githubUrl }: InstallCommandsProps) {
                         )}
                     </CopyButton>
                 </Group>
-                <Text size="xs" c="dimmed" mt={4}>
-                    🚀 Install from Skills-Plane
-                </Text>
             </Box>
+
+            {/* GitHub Command - Secondary */}
+            {githubCommand && (
+                <Box mt="xs">
+                    <Text size="xs" fw={500} c="dimmed" mb={4}>Alternative (GitHub):</Text>
+                    <Group gap="xs" wrap="nowrap">
+                        <Code style={{ flex: 1, fontSize: '0.81rem', opacity: 0.7 }}>
+                            {githubCommand}
+                        </Code>
+                        <CopyButton value={githubCommand} timeout={2000}>
+                            {({ copied, copy }) => (
+                                <Button
+                                    size="xs"
+                                    variant="subtle"
+                                    color="gray"
+                                    onClick={copy}
+                                >
+                                    {copied ? 'Copied!' : 'Copy'}
+                                </Button>
+                            )}
+                        </CopyButton>
+                    </Group>
+                </Box>
+            )}
         </Stack>
     );
 }

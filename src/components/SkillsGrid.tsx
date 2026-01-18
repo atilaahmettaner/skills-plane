@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { Stack, SimpleGrid, TextInput, Group, Badge, Card, Box, Text } from "@mantine/core";
 import { IconSearch, IconRocket, IconArrowRight } from "@tabler/icons-react";
 import { SkillCard } from "@/components/SkillCard";
+import { CopyCommand } from "@/components/CopyCommand";
 import { Database } from "@/lib/database.types";
 
 type SkillWithProfile = Database["public"]["Tables"]["skills"]["Row"] & {
@@ -71,6 +72,9 @@ export function SkillsGrid({ skills }: SkillsGridProps) {
                                 <Text className="text-dimmed" size="lg" style={{ maxWidth: 400 }}>
                                     Visual orchestration for connecting multiple agents into a unified pipeline.
                                 </Text>
+                                <Box mt="md">
+                                    <CopyCommand command="npx skills-plane add workflow-builder" />
+                                </Box>
                             </Stack>
                         </Group>
                         <IconArrowRight size={32} style={{ alignSelf: 'center' }} color="rgba(255,255,255,0.2)" />
