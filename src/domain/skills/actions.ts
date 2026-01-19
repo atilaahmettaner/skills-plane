@@ -99,3 +99,94 @@ export async function createSkill(formData: FormData) {
     revalidatePath("/");
     redirect("/");
 }
+
+export async function deleteSkill(id: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error("You must be signed in to delete a skill.");
+    }
+
+    const supabaseAdmin = createAdminClient();
+
+    // 1. Fetch the skill to check ownership
+    const { data: skill, error: fetchError } = await (supabaseAdmin.from("skills") as any)
+        .select("author_id")
+        .eq("id", id)
+        .single();
+
+
+    if (fetchError || !skill) {
+        throw new Error("Skill not found.");
+    }
+
+    // 2. Verify ownership
+    if (skill.author_id !== user.id) {
+        throw new Error("You do not have permission to delete this skill.");
+    }
+
+    // 3. Execute deletion
+    const { error: deleteError } = await supabaseAdmin
+        .from("skills")
+        .delete()
+        .eq("id", id);
+
+    if (deleteError) {
+        throw new Error("Failed to delete skill: " + deleteError.message);
+    }
+
+    revalidatePath("/");
+    revalidatePath("/dashboard");
+}
+
+export async function updateSkill(id: string, formData: FormData) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error("You must be signed in to update a skill.");
+    }
+
+    const supabaseAdmin = createAdminClient();
+
+    // 1. Fetch the skill to check ownership
+    const { data: skill, error: fetchError } = await (supabaseAdmin.from("skills") as any)
+        .select("author_id")
+        .eq("id", id)
+        .single();
+
+
+    if (fetchError || !skill) {
+        throw new Error("Skill not found.");
+    }
+
+    // 2. Verify ownership
+    if (skill.author_id !== user.id) {
+        throw new Error("You do not have permission to update this skill.");
+    }
+
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const content = formData.get("content") as string | null;
+    const githubUrl = formData.get("github_url") as string | null;
+
+    // 3. Execute update
+    // @ts-ignore - Temporary bypass for type inference issue
+    const { error: updateError } = await (supabaseAdmin.from("skills") as any).update({
+        title,
+        description: description || null,
+        content: content || null,
+        github_url: githubUrl || null,
+        updated_at: new Date().toISOString(),
+    }).eq("id", id);
+
+    if (updateError) {
+        throw new Error("Failed to update skill: " + updateError.message);
+    }
+
+    revalidatePath("/");
+    revalidatePath(`/skills/${id}`); // Assuming we might navigate to ID or Slug
+    revalidatePath("/dashboard");
+}
+
