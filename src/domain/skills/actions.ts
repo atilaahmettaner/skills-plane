@@ -1,7 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase-admin";
 import { revalidatePath } from "next/cache";
+
 import { redirect } from "next/navigation";
 
 export async function createSkill(formData: FormData) {
@@ -71,16 +73,20 @@ export async function createSkill(formData: FormData) {
         throw new Error("Title and slug are required");
     }
 
-    const { error } = await supabase.from("skills").insert({
+    const supabaseAdmin = createAdminClient();
+
+    // @ts-ignore - Temporary bypass for type inference issue with service role client
+    const { error } = await (supabaseAdmin.from("skills") as any).insert({
         title,
         slug,
         description: description || null,
         files: files,
-        content: content || null, // Keep for backward compatibility during transition
+        content: content || null,
         github_url: githubUrl || null,
         author_id: user.id,
         is_official: false,
     });
+
 
     if (error) {
         console.error("Error creating skill:", error);

@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase-admin";
 import { Database } from "@/lib/database.types";
 
 type Rule = Database["public"]["Tables"]["rules"]["Row"];
 
 export async function getRuleById(id: string): Promise<Rule | null> {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data, error } = await supabase
         .from("rules")
         .select("*")
@@ -16,7 +16,7 @@ export async function getRuleById(id: string): Promise<Rule | null> {
 }
 
 export async function getRuleBySlug(slug: string): Promise<Rule | null> {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data, error } = await supabase
         .from("rules")
         .select("*, profiles(username, avatar_url, full_name, is_verified)")
@@ -28,7 +28,7 @@ export async function getRuleBySlug(slug: string): Promise<Rule | null> {
 }
 
 export async function listRules(options?: { authorId?: string }) {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     let query = supabase.from("rules").select("*, profiles(username, avatar_url, full_name, is_verified)");
 
     if (options?.authorId) {

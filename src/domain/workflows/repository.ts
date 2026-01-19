@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase-admin";
 import { Database } from "@/lib/database.types";
 
 type Workflow = Database["public"]["Tables"]["workflows"]["Row"];
 
 export async function getWorkflowById(id: string): Promise<Workflow | null> {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data, error } = await supabase
         .from("workflows")
         .select("*")
@@ -16,7 +16,7 @@ export async function getWorkflowById(id: string): Promise<Workflow | null> {
 }
 
 export async function getWorkflowBySlug(slug: string): Promise<Workflow | null> {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data, error } = await supabase
         .from("workflows")
         .select("*, profiles(username, avatar_url, full_name, is_verified)")
@@ -28,7 +28,7 @@ export async function getWorkflowBySlug(slug: string): Promise<Workflow | null> 
 }
 
 export async function listWorkflows(options?: { authorId?: string }) {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     let query = supabase.from("workflows").select("*, profiles(username, avatar_url, full_name, is_verified)");
 
     if (options?.authorId) {

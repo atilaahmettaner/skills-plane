@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase-admin";
 import { Database } from "@/lib/database.types";
 
 type Skill = Database["public"]["Tables"]["skills"]["Row"];
 
 export async function getSkillById(id: string): Promise<Skill | null> {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data, error } = await supabase
         .from("skills")
         .select("*")
@@ -16,7 +16,7 @@ export async function getSkillById(id: string): Promise<Skill | null> {
 }
 
 export async function getSkillBySlug(slug: string): Promise<Skill | null> {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data, error } = await supabase
         .from("skills")
         .select("*, profiles(username, avatar_url, full_name, is_verified)")
@@ -28,7 +28,7 @@ export async function getSkillBySlug(slug: string): Promise<Skill | null> {
 }
 
 export async function listSkills(options?: { authorId?: string; search?: string }) {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     let query = supabase.from("skills").select("*, profiles(username, avatar_url, full_name, is_verified)");
 
     if (options?.authorId) {
