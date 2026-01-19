@@ -33,6 +33,9 @@ export async function listSkills(options?: { authorId?: string; search?: string 
 
     if (options?.authorId) {
         query = query.eq("author_id", options.authorId);
+    } else {
+        // For public listing, only show approved skills
+        query = query.eq("status", "approved");
     }
 
     if (options?.search) {

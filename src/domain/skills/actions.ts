@@ -61,15 +61,28 @@ export async function createSkill(formData: FormData) {
         slug = slug.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     }
 
-    // Validation: Either GitHub URL or files must be provided
-    if (!githubUrl && Object.keys(files).length === 0) {
-        throw new Error("Either GitHub URL or skill content must be provided");
+    // Basic quality validation (manufacturing compliance)
+    if (!description || description.length < 10) {
+        throw new Error("Description must be at least 10 characters long.");
+    }
+
+    if (Object.keys(files).length === 0 && !githubUrl) {
+        throw new Error("Skill must include content files or a GitHub repository.");
     }
 
     // Title and slug are required
     if (!title || !slug) {
         throw new Error("Title and slug are required");
     }
+
+    // Check user verification status
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_verified")
+        .eq("id", user.id)
+        .single();
+
+    const isVerified = profile?.is_verified || false;
 
     const { error } = await supabase.from("skills").insert({
         title,
@@ -80,6 +93,7 @@ export async function createSkill(formData: FormData) {
         github_url: githubUrl || null,
         author_id: user.id,
         is_official: false,
+        status: isVerified ? 'approved' : 'pending',
     });
 
     if (error) {
@@ -89,6 +103,15 @@ export async function createSkill(formData: FormData) {
         }
         throw new Error("Failed to create skill: " + error.message);
     }
+
+    // Log the creation
+    await supabase.from("audit_logs").insert({
+        user_id: user.id,
+        action: 'create_skill',
+        resource_type: 'skill',
+        resource_id: slug,
+        details: { title, is_verified: isVerified, status: isVerified ? 'approved' : 'pending' },
+    });
 
     revalidatePath("/");
     redirect("/");
