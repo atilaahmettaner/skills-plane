@@ -39,6 +39,18 @@ npx add-skill <github-url>
 
 ---
 
+## 📋 Aviation Compliance
+
+Skills Plane implements aviation-inspired regulatory compliance for AI agent skills:
+
+- **Pilots (Users)**: Verified user profiles required for direct publishing. Unverified submissions enter approval queue.
+- **Airports (Platform)**: Comprehensive audit logging for all skill operations. Secure authentication and access controls.
+- **Manufacturing (Skills)**: Quality validation ensures skills meet minimum standards (descriptions, content). Approval process for unverified creators.
+
+All skills undergo validation to maintain platform integrity and safety standards.
+
+---
+
 ## 🤝 Join the Movement
 
 We are building a future where intelligence is shareable, verifiable, and standardized. We don't want your money; we want your knowledge. 

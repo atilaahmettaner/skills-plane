@@ -50,6 +50,7 @@ export interface Database {
                     author_id: string
                     is_official: boolean
                     github_url: string | null
+                    status: 'draft' | 'pending' | 'approved'
                     created_at: string
                     updated_at: string
                 }
@@ -62,6 +63,8 @@ export interface Database {
                     files?: Json | null
                     author_id: string
                     is_official?: boolean
+                    github_url?: string | null
+                    status?: 'draft' | 'pending' | 'approved'
                     created_at?: string
                     updated_at?: string
                 }
@@ -74,6 +77,8 @@ export interface Database {
                     files?: Json | null
                     author_id?: string
                     is_official?: boolean
+                    github_url?: string | null
+                    status?: 'draft' | 'pending' | 'approved'
                     created_at?: string
                     updated_at?: string
                 }
