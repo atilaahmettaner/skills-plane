@@ -2,33 +2,94 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import { homedir, tmpdir } from 'os';
 import { fileURLToPath } from 'url';
+import { execFile } from 'child_process';
 
 // Simple argument parsing
 const args = process.argv.slice(2);
 const command = args[0];
-const slug = args[1];
+const source = args[1];
+const flags = parseFlags(args.slice(2));
 
 const API_BASE_URL = process.env.SKILLS_API_URL || 'https://skills-plane.vercel.app/api/v1';
 
 async function main() {
     if (command !== 'install' && command !== 'add') {
-        console.log('Usage: npx skills-plane install <slug>');
-        console.log('Alias: npx skills-plane add <slug>');
+        printUsage();
         process.exit(1);
     }
 
-    if (!slug) {
-        console.error('Error: Please provide a skill slug.');
-        console.log('Usage: npx skills-plane install <slug>');
+    if (!source) {
+        console.error('Error: Please provide a skill slug or GitHub/local path.');
+        printUsage();
         process.exit(1);
     }
 
+    const installTarget = flags.target === 'claude' ? path.join('.claude', 'skills') : path.join('.agent', 'skills');
+    const force = Boolean(flags.force);
+
+    // If source looks like a git/local path, install from repo; otherwise use API slug flow
+    if (isGitLike(source) || isLocalPath(source)) {
+        await installFromRepoOrPath(source, { targetDir: installTarget, force });
+        return;
+    }
+
+    await installFromApiSlug(source, installTarget, force);
+}
+
+async function installFromRepoOrPath(input, { targetDir, force }) {
+    const { tempDir, cleanup } = await makeTempDir();
+    let skillRoot;
+    let skillName;
+    let metadata = {
+        source: input,
+        sourceType: isLocalPath(input) ? 'local' : 'git',
+        repoUrl: undefined,
+        subpath: '',
+        installedAt: new Date().toISOString(),
+    };
+
+    try {
+        if (isLocalPath(input)) {
+            const resolved = expandPath(input);
+            await assertDirectory(resolved, 'Local path not found or not a directory');
+            skillRoot = resolved;
+            metadata.localPath = resolved;
+        } else {
+            const { repoUrl, subpath } = normalizeGitSource(input);
+            metadata.repoUrl = repoUrl;
+            metadata.subpath = subpath;
+            const repoDir = path.join(tempDir, 'repo');
+            await runGitClone(repoUrl, repoDir);
+            skillRoot = subpath ? path.join(repoDir, subpath) : repoDir;
+        }
+
+        await assertFile(path.join(skillRoot, 'SKILL.md'), 'SKILL.md not found in the provided path');
+        skillName = path.basename(skillRoot);
+
+        const destDir = path.join(process.cwd(), targetDir, skillName);
+        await ensureWritableTarget(destDir, { force });
+
+        await fs.mkdir(path.dirname(destDir), { recursive: true });
+        await fs.cp(skillRoot, destDir, { recursive: true, dereference: true });
+        await writeMetadata(destDir, metadata);
+
+        console.log(`\n✅ Installed '${skillName}' to ${destDir}`);
+        console.log(`   Source: ${input}`);
+    } catch (error) {
+        console.error(`\n❌ Error: ${error.message}\n`);
+        process.exit(1);
+    } finally {
+        await cleanup();
+    }
+}
+
+async function installFromApiSlug(slug, targetDir, force) {
     console.log(`\n📦 Installing skill: ${slug}...`);
     console.log(`   Source: ${API_BASE_URL}/skills/${slug}`);
 
     try {
-        // 1. Fetch Skill Data
         const response = await fetch(`${API_BASE_URL}/skills/${slug}`);
 
         if (!response.ok) {
@@ -56,13 +117,12 @@ async function main() {
             throw new Error('Skill content is empty.');
         }
 
-        // 3. Write Files
-        const targetDir = path.join('.agent', 'skills', slug);
-
-        console.log(`   Target: ${targetDir}`);
+        const target = path.join(targetDir, slug);
+        await ensureWritableTarget(target, { force });
+        console.log(`   Target: ${target}`);
 
         for (const file of files) {
-            const filePath = path.join(targetDir, file.filename);
+            const filePath = path.join(target, file.filename);
             const dir = path.dirname(filePath);
 
             await fs.mkdir(dir, { recursive: true });
@@ -70,6 +130,12 @@ async function main() {
 
             console.log(`   + Created ${file.filename}`);
         }
+
+        await writeMetadata(target, {
+            source: `${API_BASE_URL}/skills/${slug}`,
+            sourceType: 'api',
+            installedAt: new Date().toISOString(),
+        });
 
         console.log(`\n✅ Skill '${slug}' installed successfully!\n`);
 
@@ -128,6 +194,131 @@ function parseSkillFiles(content) {
     }
 
     return files;
+}
+
+function isGitLike(value) {
+    return value.startsWith('git@') || value.startsWith('http://') || value.startsWith('https://') || value.endsWith('.git') || value.split('/').length >= 2;
+}
+
+function isLocalPath(value) {
+    return value.startsWith('.') || value.startsWith('/') || value.startsWith('~');
+}
+
+function expandPath(value) {
+    if (value.startsWith('~/')) {
+        return path.join(homedir(), value.slice(2));
+    }
+    return path.resolve(value);
+}
+
+function normalizeGitSource(input) {
+    if (input.startsWith('git@') || input.startsWith('http://') || input.startsWith('https://') || input.endsWith('.git')) {
+        return { repoUrl: input, subpath: '' };
+    }
+    const parts = input.split('/');
+    if (parts.length < 2) {
+        throw new Error('Invalid source. Use owner/repo or full git URL.');
+    }
+    const repoUrl = `https://github.com/${parts[0]}/${parts[1]}`;
+    const subpath = parts.length > 2 ? parts.slice(2).join('/') : '';
+    return { repoUrl, subpath };
+}
+
+async function makeTempDir() {
+    const dir = await fs.mkdtemp(path.join(tmpdir(), 'skills-plane-'));
+    return {
+        tempDir: dir,
+        cleanup: async () => {
+            try {
+                await fs.rm(dir, { recursive: true, force: true });
+            } catch {
+                // ignore cleanup errors
+            }
+        }
+    };
+}
+
+async function runGitClone(repoUrl, destination) {
+    await fs.mkdir(destination, { recursive: true });
+    await new Promise((resolve, reject) => {
+        execFile('git', ['clone', '--depth', '1', '--quiet', repoUrl, destination], (error, stdout, stderr) => {
+            if (error) {
+                reject(new Error(`Failed to clone repository: ${stderr?.toString() || error.message}`));
+                return;
+            }
+            resolve();
+        });
+    });
+}
+
+async function assertDirectory(dirPath, message) {
+    try {
+        const stat = await fs.stat(dirPath);
+        if (!stat.isDirectory()) {
+            throw new Error(message);
+        }
+    } catch {
+        throw new Error(message);
+    }
+}
+
+async function assertFile(filePath, message) {
+    try {
+        const stat = await fs.stat(filePath);
+        if (!stat.isFile()) {
+            throw new Error(message);
+        }
+    } catch {
+        throw new Error(message);
+    }
+}
+
+async function ensureWritableTarget(destDir, { force }) {
+    try {
+        await fs.access(destDir);
+        if (!force) {
+            throw new Error(`Target ${destDir} already exists. Re-run with --force to overwrite.`);
+        }
+        await fs.rm(destDir, { recursive: true, force: true });
+    } catch (error) {
+        // If access failed because it doesn't exist, this is fine
+        if (error && error.code === 'ENOENT') {
+            return;
+        }
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('Unable to prepare target directory.');
+    }
+}
+
+async function writeMetadata(destDir, metadata) {
+    const metaPath = path.join(destDir, '.skills-plane.json');
+    await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2));
+}
+
+function parseFlags(flagArgs) {
+    const out = {};
+    for (const item of flagArgs) {
+        if (item === '--force') {
+            out.force = true;
+            continue;
+        }
+        if (item.startsWith('--target=')) {
+            const value = item.split('=')[1];
+            if (value === 'agent' || value === 'claude') {
+                out.target = value;
+            }
+        }
+    }
+    return out;
+}
+
+function printUsage() {
+    console.log('Usage:');
+    console.log('  npx skills-plane install <slug>');
+    console.log('  npx skills-plane install <owner/repo[/subpath]> [--target=agent|claude] [--force]');
+    console.log('Alias: npx skills-plane add <...>');
 }
 
 main();
