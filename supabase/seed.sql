@@ -38,3 +38,41 @@ VALUES
     true
   )
 ON CONFLICT (slug) DO NOTHING;
+
+-- 4. Create Official Xquik Profile
+INSERT INTO auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
+VALUES
+  (
+    'd0d0d0d0-d0d0-d0d0-d0d0-d0d0d0d0d002',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'support@xquik.com',
+    '$2a$10$NotARealHashButItDoesntMatterForMockData',
+    now(),
+    '{"full_name": "Xquik", "user_name": "xquik", "avatar_url": "https://xquik.com/icon.svg"}',
+    now(),
+    now()
+  )
+ON CONFLICT (id) DO NOTHING;
+
+-- 5. Update Xquik Profile
+UPDATE public.profiles
+SET is_verified = true,
+    website = 'https://xquik.com',
+    type = 'organization'
+WHERE id = 'd0d0d0d0-d0d0-d0d0-d0d0-d0d0d0d0d002';
+
+-- 6. Insert TweetClaw Skill
+INSERT INTO public.skills (slug, title, description, content, github_url, author_id, is_official)
+VALUES
+  (
+    'tweetclaw',
+    'TweetClaw',
+    'X/Twitter automation skill for TweetClaw REST API, MCP, OpenClaw plugin, monitoring, webhooks, and approved account actions.',
+    NULL,
+    'https://github.com/Xquik-dev/tweetclaw/tree/master/skills/tweetclaw',
+    'd0d0d0d0-d0d0-d0d0-d0d0-d0d0d0d0d002',
+    true
+  )
+ON CONFLICT (slug) DO NOTHING;
